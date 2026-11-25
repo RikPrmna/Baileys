@@ -38,7 +38,8 @@ import {
 	getAudioDuration,
 	getAudioWaveform,
 	getRawMediaUploadData,
-	type MediaDownloadOptions
+	type MediaDownloadOptions,
+	normalizeAudioMedia
 } from './messages-media'
 import { shouldIncludeReportingToken } from './reporting-utils'
 
@@ -55,6 +56,7 @@ type MediaUploadData = {
 	ptt?: boolean
 	ptv?: boolean
 	seconds?: number
+	normalizeAudio?: boolean
 	gifPlayback?: boolean
 	fileName?: string
 	jpegThumbnail?: string
@@ -219,6 +221,13 @@ export const prepareWAMessageMedia = async (
 
 		return obj
 	}
+
+	if (mediaType === 'audio' && uploadData.normalizeAudio) {
+		uploadData.media = await normalizeAudioMedia(uploadData.media, logger)
+		logger?.debug('normalized audio')
+	}
+
+	delete uploadData.normalizeAudio
 
 	const requiresDurationComputation = mediaType === 'audio' && typeof uploadData.seconds === 'undefined'
 	const requiresThumbnailComputation =
@@ -513,6 +522,16 @@ export const generateWAMessageContent = async (
 		m.protocolMessage = {
 			key: message.delete,
 			type: WAProto.Message.ProtocolMessage.Type.REVOKE
+		}
+	} else if (hasNonNullishProperty(message, 'keep')) {
+		if (!message.keep?.id) {
+			throw new Boom('keep requires a message key with an id', { statusCode: 400 })
+		}
+
+		m.keepInChatMessage = {
+			key: message.keep,
+			keepType: message.keepType ?? proto.KeepType.KEEP_FOR_ALL,
+			timestampMs: Date.now()
 		}
 	} else if (hasNonNullishProperty(message, 'forward')) {
 		m = generateForwardMessageContent(message.forward, message.force)

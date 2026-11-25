@@ -195,6 +195,8 @@ export type AnyMediaMessageContent = (
 			ptt?: boolean
 			/** optionally tell the duration of the audio */
 			seconds?: number
+			/** if set to true, loudness-normalize the audio via ffmpeg before sending */
+			normalizeAudio?: boolean
 	  }
 	| ({
 			sticker: WAMediaUpload
@@ -349,6 +351,12 @@ export type AnyMessageContent =
 			delete: WAMessageKey
 	  }
 	| {
+			/** Keep a message in chat so it is not removed by disappearing messages */
+			keep: WAMessageKey
+			/** defaults to KEEP_FOR_ALL; use UNDO_KEEP_FOR_ALL to un-keep */
+			keepType?: proto.KeepType
+	  }
+	| {
 			disappearingMessagesInChat: boolean | number
 	  }
 	| {
@@ -374,6 +382,8 @@ export type MessageRelayOptions = MinimalRelayOptions & {
 	useUserDevicesCache?: boolean
 	/** jid list of participants for status@broadcast */
 	statusJidList?: string[]
+	/** jid list of recipients for a broadcast list (xxx@broadcast) */
+	broadcastJidList?: string[]
 }
 
 export type MiscMessageGenerationOptions = MinimalRelayOptions & {
@@ -387,6 +397,8 @@ export type MiscMessageGenerationOptions = MinimalRelayOptions & {
 	mediaUploadTimeoutMs?: number
 	/** jid list of participants for status@broadcast */
 	statusJidList?: string[]
+	/** jid list of recipients for a broadcast list (xxx@broadcast) */
+	broadcastJidList?: string[]
 	/** backgroundcolor for status */
 	backgroundColor?: string
 	/** font type for status */

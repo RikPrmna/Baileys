@@ -324,6 +324,40 @@ export const getStream = async (item: WAMediaUpload, opts?: RequestInit & { maxC
 	return { stream: createReadStream(item.url), type: 'file' } as const
 }
 
+/** ffmpeg command that loudness-normalizes an audio file to ogg/opus (WhatsApp voice-note format) */
+export const getNormalizeAudioCommand = (inputPath: string, outputPath: string) =>
+	`ffmpeg -i ${inputPath} -af loudnorm=I=-16:TP=-1.5:LRA=11 -c:a libopus -y ${outputPath}`
+
+/**
+ * Loudness-normalizes audio media via ffmpeg loudnorm and returns it as a buffer.
+ * Falls back to the original audio if ffmpeg is unavailable or fails, so sending never breaks.
+ */
+export const normalizeAudioMedia = async (media: WAMediaUpload, logger?: ILogger): Promise<WAMediaUpload> => {
+	const { stream } = await getStream(media)
+	const buffer = await toBuffer(stream)
+	const inputPath = join(getTmpFilesDirectory(), 'audio' + generateMessageIDV2() + '-norm-in')
+	const outputPath = join(getTmpFilesDirectory(), 'audio' + generateMessageIDV2() + '-norm-out.ogg')
+	try {
+		await fs.writeFile(inputPath, buffer)
+		await new Promise<void>((resolve, reject) => {
+			exec(getNormalizeAudioCommand(inputPath, outputPath), err => {
+				if (err) {
+					reject(err)
+				} else {
+					resolve()
+				}
+			})
+		})
+		return await fs.readFile(outputPath)
+	} catch (e) {
+		logger?.debug('Failed to normalize audio, sending original: ' + e)
+		return buffer
+	} finally {
+		await fs.unlink(inputPath).catch(() => {})
+		await fs.unlink(outputPath).catch(() => {})
+	}
+}
+
 /** generates a thumbnail for a given media, if required */
 export async function generateThumbnail(
 	file: string,

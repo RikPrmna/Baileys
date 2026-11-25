@@ -56,6 +56,7 @@ import {
 	isHostedLidUser,
 	isHostedPnUser,
 	isJidBot,
+	isJidBroadcast,
 	isJidGroup,
 	isJidMetaAI,
 	isLidUser,
@@ -623,7 +624,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			additionalNodes,
 			useUserDevicesCache,
 			useCachedGroupMetadata,
-			statusJidList
+			statusJidList,
+			broadcastJidList
 		}: MessageRelayOptions
 	) => {
 		const meId = assertMeId(authState.creds)
@@ -635,14 +637,16 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const { user, server } = jidDecode(jid)!
 		const isGroup = server === 'g.us'
 		const isStatus = jid === statusJid
+		// broadcast lists (xxx@broadcast) are relayed like status: sender-key encryption to a supplied recipient list
+		const isBroadcast = isJidBroadcast(jid)
 		const isLid = server === 'lid'
 		const isNewsletter = server === 'newsletter'
-		const isGroupOrStatus = isGroup || isStatus
+		const isGroupOrBroadcast = isGroup || isBroadcast
 		const finalJid = jid
 
 		msgId = msgId || generateMessageIDV2(meId)
 		useUserDevicesCache = useUserDevicesCache !== false
-		useCachedGroupMetadata = useCachedGroupMetadata !== false && !isStatus
+		useCachedGroupMetadata = useCachedGroupMetadata !== false && !isBroadcast
 
 		const participants: BinaryNode[] = []
 		const destinationJid = !isStatus ? finalJid : statusJid
@@ -661,7 +665,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const extraAttrs: BinaryNodeAttributes = {}
 
 		if (participant) {
-			if (!isGroup && !isStatus) {
+			if (!isGroup && !isBroadcast) {
 				additionalAttributes = { ...additionalAttributes, device_fanout: 'false' }
 			}
 
@@ -706,20 +710,20 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				extraAttrs['decrypt-fail'] = 'hide' // todo: expand for reactions and other types
 			}
 
-			if (isGroupOrStatus && !isRetryResend) {
+			if (isGroupOrBroadcast && !isRetryResend) {
 				const [groupData, senderKeyMap] = await Promise.all([
 					(async () => {
 						let groupData = useCachedGroupMetadata && cachedGroupMetadata ? await cachedGroupMetadata(jid) : undefined // todo: should we rely on the cache specially if the cache is outdated and the metadata has new fields?
 						if (groupData && Array.isArray(groupData?.participants)) {
 							logger.trace({ jid, participants: groupData.participants.length }, 'using cached group metadata')
-						} else if (!isStatus) {
+						} else if (isGroup) {
 							groupData = await groupMetadata(jid) // TODO: start storing group participant list + addr mode in Signal & stop relying on this
 						}
 
 						return groupData
 					})(),
 					(async () => {
-						if (!participant && !isStatus) {
+						if (!participant && isGroup) {
 							// what if sender memory is less accurate than the cached metadata
 							// on participant change in group, we should do sender memory manipulation
 							const result = await authState.keys.get('sender-key-memory', [jid]) // TODO: check out what if the sender key memory doesn't include the LID stuff now?
@@ -739,8 +743,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					}
 				}
 
-				if (isStatus && statusJidList) {
-					participantsList.push(...statusJidList)
+				const broadcastRecipients = isStatus ? statusJidList : broadcastJidList
+				if (isBroadcast && broadcastRecipients) {
+					participantsList.push(...broadcastRecipients)
 				}
 
 				const additionalDevices = await getUSyncDevices(participantsList, !!useUserDevicesCache, false)
@@ -924,7 +929,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				const isMe = areJidsSameUser(participant!.jid, isParticipantLid ? meLid : meId)
 
 				let messageToSend = message
-				if (isGroupOrStatus) {
+				if (isGroupOrBroadcast) {
 					let groupSenderIdentity: string | undefined
 					if (meLid && (await signalRepository.hasSenderKey({ group: destinationJid, meId: meLid }))) {
 						groupSenderIdentity = meLid
@@ -1061,7 +1066,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 			// WA Web never attaches tctoken to peer (AppStateSync) messages — server rejects with 479
 			const isPeerMessage = additionalAttributes?.['category'] === 'peer'
-			const is1on1Send = !isGroup && !isRetryResend && !isStatus && !isNewsletter && !isPeerMessage
+			const is1on1Send = !isGroup && !isRetryResend && !isBroadcast && !isNewsletter && !isPeerMessage
 
 			// Resolve destination to LID for tctoken storage — matches Signal session key pattern
 			const tcTokenJid = is1on1Send ? await resolveTcTokenJid(destinationJid, getLIDForPN) : destinationJid
@@ -1438,6 +1443,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					useCachedGroupMetadata: options.useCachedGroupMetadata,
 					additionalAttributes,
 					statusJidList: options.statusJidList,
+					broadcastJidList: options.broadcastJidList,
 					additionalNodes
 				})
 				if (config.emitOwnEvents) {
