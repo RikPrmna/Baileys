@@ -21,6 +21,7 @@ import type {
 	MessageGenerationOptionsFromContent,
 	MessageUserReceipt,
 	MessageWithContextInfo,
+	ProductHeaderInfo,
 	WALocationMessage,
 	WAMediaUpload,
 	WAMessage,
@@ -408,6 +409,7 @@ type InteractiveHeaderInput = {
 	video?: WAMediaUpload
 	document?: WAMediaUpload
 	location?: WALocationMessage
+	product?: ProductHeaderInfo
 	headerTitle?: string
 	headerSubtitle?: string
 }
@@ -416,9 +418,11 @@ const buildInteractiveHeader = async (
 	message: InteractiveHeaderInput,
 	options: MessageContentGenerationOptions
 ): Promise<proto.Message.InteractiveMessage.IHeader | undefined> => {
-	const mediaCount = [message.image, message.video, message.document, message.location].filter(Boolean).length
+	const mediaCount = [message.image, message.video, message.document, message.location, message.product].filter(
+		Boolean
+	).length
 	if (mediaCount > 1) {
-		throw new Boom('provide only one of image, video, document or location header', { statusCode: 400 })
+		throw new Boom('provide only one of image, video, document, location or product header', { statusCode: 400 })
 	}
 
 	const header: proto.Message.InteractiveMessage.IHeader = {}
@@ -448,9 +452,45 @@ const buildInteractiveHeader = async (
 	} else if (message.location) {
 		header.hasMediaAttachment = true
 		header.locationMessage = message.location
+	} else if (message.product) {
+		const product = message.product
+		const snapshot: proto.Message.ProductMessage.IProductSnapshot = {
+			productId: product.productId,
+			title: product.title,
+			description: product.description,
+			currencyCode: product.currencyCode,
+			priceAmount1000: product.priceAmount1000,
+			retailerId: product.retailerId,
+			url: product.url
+		}
+		if (product.productImage) {
+			const { imageMessage } = await prepareWAMessageMedia({ image: product.productImage }, options)
+			snapshot.productImage = imageMessage
+			header.hasMediaAttachment = true
+		}
+
+		header.productMessage = { product: snapshot, businessOwnerJid: product.businessOwnerJid }
 	}
 
 	return Object.keys(header).length > 0 ? header : undefined
+}
+
+const buildInteractiveFooter = async (
+	message: { footer?: string; footerAudio?: WAMediaUpload },
+	options: MessageContentGenerationOptions
+): Promise<proto.Message.InteractiveMessage.IFooter | undefined> => {
+	if (!message.footer && !message.footerAudio) {
+		return undefined
+	}
+
+	const footer: proto.Message.InteractiveMessage.IFooter = { text: message.footer }
+	if (message.footerAudio) {
+		const { audioMessage } = await prepareWAMessageMedia({ audio: message.footerAudio }, options)
+		footer.hasMediaAttachment = true
+		footer.audioMessage = audioMessage
+	}
+
+	return footer
 }
 
 const toNativeFlowButton = (button: ButtonInfo) => {
@@ -478,6 +518,29 @@ const toNativeFlowButton = (button: ButtonInfo) => {
 				buttonParamsJson: JSON.stringify({
 					display_text: button.displayText,
 					copy_code: button.copyCode
+				})
+			}
+		case 'location':
+			// send_location takes no params; the client renders its own localized label
+			return {
+				name: 'send_location',
+				buttonParamsJson: '{}'
+			}
+		case 'address':
+			// address_message takes no params; the client renders its own localized label
+			return {
+				name: 'address_message',
+				buttonParamsJson: '{}'
+			}
+		case 'flow':
+			return {
+				name: 'flow_message',
+				buttonParamsJson: JSON.stringify({
+					flow_token: button.flowToken ?? 'unused',
+					flow_id: button.flowId,
+					flow_cta: button.displayText,
+					flow_action: 'navigate',
+					flow_action_payload: { screen: button.screen ?? 'WELCOME' }
 				})
 			}
 		default:
@@ -508,7 +571,7 @@ export const generateWAMessageContent = async (
 		m.interactiveMessage = WAProto.Message.InteractiveMessage.create({
 			header,
 			body: { text: message.text },
-			footer: message.footer ? { text: message.footer } : undefined,
+			footer: await buildInteractiveFooter(message, options),
 			nativeFlowMessage: {
 				messageVersion: 1,
 				buttons: buttons.map(toNativeFlowButton)
@@ -531,7 +594,7 @@ export const generateWAMessageContent = async (
 		m.interactiveMessage = WAProto.Message.InteractiveMessage.create({
 			header,
 			body: { text: message.text },
-			footer: message.footer ? { text: message.footer } : undefined,
+			footer: await buildInteractiveFooter(message, options),
 			nativeFlowMessage: {
 				messageVersion: 1,
 				buttons: [
@@ -577,7 +640,7 @@ export const generateWAMessageContent = async (
 				WAProto.Message.InteractiveMessage.create({
 					header: await buildInteractiveHeader(card, options),
 					body: { text: card.text },
-					footer: card.footer ? { text: card.footer } : undefined,
+					footer: await buildInteractiveFooter(card, options),
 					nativeFlowMessage: {
 						messageVersion: 1,
 						buttons: card.buttons.map(toNativeFlowButton)
@@ -588,7 +651,7 @@ export const generateWAMessageContent = async (
 
 		m.interactiveMessage = WAProto.Message.InteractiveMessage.create({
 			body: { text: message.text },
-			footer: message.footer ? { text: message.footer } : undefined,
+			footer: await buildInteractiveFooter(message, options),
 			carouselMessage: {
 				cards,
 				messageVersion: 1,

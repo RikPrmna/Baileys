@@ -9,9 +9,14 @@
 > | --- | :---: | :---: |
 > | Quick-reply button messages | ✅ | ❌ |
 > | CTA buttons (URL / call / copy) | ✅ | ❌ |
+> | Send-location button | ✅ | ❌ |
+> | Address-form button | ✅* | ❌ |
+> | WhatsApp Flow button | ✅* | ❌ |
 > | Single-select list messages | ✅ | ❌ |
 > | Carousel messages | ✅ | ❌ |
 > | Image/video/document/location/text headers on buttons, lists & cards | ✅ | ❌ |
+> | Product header | ✅* | ❌ |
+> | Footer audio | ✅* | ❌ |
 > | Keep-in-chat messages (keep/unkeep) | ✅ | ❌ |
 > | Broadcast-list relay (`broadcastJidList`) | ✅ | ❌ |
 > | Audio loudness normalization (`normalizeAudio`) | ✅ | ❌ |
@@ -149,8 +154,24 @@ await sock.sendMessage(
 )
 ```
 
+### Location, Address & Flow Buttons
+- `{ type: 'location', displayText }` opens the location picker; the picked location is sent back to the bot as a location message. The button label is rendered by WhatsApp itself (localized), `displayText` is not shown
+- `{ type: 'address', displayText }` opens the WhatsApp address form (*only rendered in regions/versions where WhatsApp supports address forms*)
+- `{ type: 'flow', displayText, flowId, flowToken?, screen? }` opens a WhatsApp Flow (*requires a real Flow ID from Meta Business*)
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Send us your location:',
+        buttons: [{ type: 'location', displayText: 'Send location' }]
+    }
+)
+```
+
 ### Headers
 - Button, list and carousel-card messages accept one optional header: `image`, `video`, `document` or `location` (provide at most one), plus optional `headerTitle` / `headerSubtitle` text
+- A `product` header (`{ productId, title?, description?, currencyCode?, priceAmount1000?, retailerId?, url?, productImage?, businessOwnerJid? }`) shows a catalog product card (*only rendered for real catalog products of business accounts*)
+- `footerAudio` attaches an audio message to the footer (*current WhatsApp clients do not render footer audio in chat messages*)
 ```ts
 await sock.sendMessage(
     jid,

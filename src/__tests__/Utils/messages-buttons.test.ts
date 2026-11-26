@@ -338,6 +338,108 @@ describe('generateWAMessageContent with carousel', () => {
 	})
 })
 
+describe('generateWAMessageContent with location/address/flow buttons', () => {
+	it('builds send_location and address_message buttons', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Kirim alamatmu:',
+				buttons: [
+					{ type: 'location', displayText: 'Kirim Lokasi' },
+					{ type: 'address', displayText: 'Isi Alamat' }
+				]
+			},
+			baseOptions
+		)
+
+		const flowButtons = content.interactiveMessage?.nativeFlowMessage?.buttons
+		expect(flowButtons?.[0]?.name).toBe('send_location')
+		expect(flowButtons?.[0]?.buttonParamsJson).toBe('{}')
+		expect(flowButtons?.[1]?.name).toBe('address_message')
+		expect(flowButtons?.[1]?.buttonParamsJson).toBe('{}')
+	})
+
+	it('builds a flow_message button with defaults', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Isi form:',
+				buttons: [{ type: 'flow', displayText: 'Buka Form', flowId: '1234567890' }]
+			},
+			baseOptions
+		)
+
+		const flowButtons = content.interactiveMessage?.nativeFlowMessage?.buttons
+		expect(flowButtons?.[0]?.name).toBe('flow_message')
+		expect(JSON.parse(flowButtons?.[0]?.buttonParamsJson || '{}')).toEqual({
+			flow_token: 'unused',
+			flow_id: '1234567890',
+			flow_cta: 'Buka Form',
+			flow_action: 'navigate',
+			flow_action_payload: { screen: 'WELCOME' }
+		})
+	})
+})
+
+describe('generateWAMessageContent with product header and footer audio', () => {
+	const uploadOptions: MessageContentGenerationOptions = {
+		upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+	}
+
+	it('builds a product header with uploaded image', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Produk unggulan:',
+				product: {
+					productId: 'prod-1',
+					title: 'Layanan A',
+					currencyCode: 'IDR',
+					priceAmount1000: 10000000,
+					productImage: Buffer.from('fake-jpeg-bytes')
+				},
+				buttons: [{ id: 'beli:1', displayText: 'Beli' }]
+			},
+			uploadOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.productMessage?.product?.productId).toBe('prod-1')
+		expect(header?.productMessage?.product?.title).toBe('Layanan A')
+		expect(header?.productMessage?.product?.priceAmount1000).toBe(10000000)
+		expect(header?.productMessage?.product?.productImage?.url).toBe('https://example.com/media')
+	})
+
+	it('rejects a product header combined with another header media', async () => {
+		await expect(
+			generateWAMessageContent(
+				{
+					text: 'Pilih:',
+					image: Buffer.from('fake-jpeg-bytes'),
+					product: { productId: 'prod-1' },
+					buttons: [{ id: 'b1', displayText: 'Satu' }]
+				},
+				baseOptions
+			)
+		).rejects.toMatchObject({ output: { statusCode: 400 } })
+	})
+
+	it('attaches uploaded audio to the footer', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Dengarkan:',
+				footer: 'Mahiru Beta',
+				footerAudio: Buffer.from('fake-audio-bytes'),
+				buttons: [{ id: 'f:1', displayText: 'OK' }]
+			},
+			uploadOptions
+		)
+
+		const footer = content.interactiveMessage?.footer
+		expect(footer?.text).toBe('Mahiru Beta')
+		expect(footer?.hasMediaAttachment).toBe(true)
+		expect(footer?.audioMessage?.url).toBe('https://example.com/media')
+	})
+})
+
 describe('generateWAMessageContent with list', () => {
 	const listMessage = {
 		text: 'Pilih medsos:',
