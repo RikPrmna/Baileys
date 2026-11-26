@@ -1230,9 +1230,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	// it the server still accepts the message, but Web shows "cannot be loaded"
 	// and the phone hides it entirely. The addon shape is the one other
 	// WhatsApp libraries attach for quick_reply / single_select flows.
+	// Carousel messages carry their native-flow buttons inside cards, so they
+	// get the same addon.
 	const getNativeFlowBizNode = (message: proto.IMessage): BinaryNode | undefined => {
 		const normalized = normalizeMessageContent(message)
-		if (!normalized?.interactiveMessage?.nativeFlowMessage) {
+		const interactive = normalized?.interactiveMessage
+		if (!interactive?.nativeFlowMessage && !interactive?.carouselMessage) {
 			return undefined
 		}
 

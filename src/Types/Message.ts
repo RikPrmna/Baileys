@@ -219,13 +219,42 @@ export type ButtonReplyInfo = {
 	index: number
 }
 
-/** a quick-reply button sent with a native-flow interactive message */
-export type ButtonInfo = {
-	/** id returned to the bot when the user taps this button */
-	id: string
-	/** label shown on the button */
-	displayText: string
-}
+/** a button sent with a native-flow interactive message */
+export type ButtonInfo =
+	| {
+			/** quick-reply button (default): tapping sends the id back to the bot */
+			type?: 'reply'
+			/** id returned to the bot when the user taps this button */
+			id: string
+			/** label shown on the button */
+			displayText: string
+	  }
+	| {
+			/** opens a URL in the browser when tapped; nothing is sent back to the bot */
+			type: 'url'
+			/** label shown on the button */
+			displayText: string
+			/** URL opened when the button is tapped */
+			url: string
+			/** optional merchant URL shown by some clients */
+			merchantUrl?: string
+	  }
+	| {
+			/** opens the dialer with the number filled in when tapped */
+			type: 'call'
+			/** label shown on the button */
+			displayText: string
+			/** phone number to call, in international format */
+			phoneNumber: string
+	  }
+	| {
+			/** copies text to the clipboard when tapped */
+			type: 'copy'
+			/** label shown on the button */
+			displayText: string
+			/** text copied to the clipboard when the button is tapped */
+			copyCode: string
+	  }
 
 /** a row in a single-select list section */
 export type ListSectionRow = {
@@ -251,6 +280,33 @@ export type ListInfo = {
 	/** label of the button that opens the list */
 	buttonText: string
 	sections: ListSection[]
+}
+
+/** a card in a carousel sent with a native-flow interactive message */
+export type CarouselCardInfo = {
+	/** text shown on the card */
+	text: string
+	/** optional image shown in the card header */
+	image?: WAMediaUpload
+	/** optional video shown in the card header */
+	video?: WAMediaUpload
+	/** optional document shown in the card header */
+	document?: WAMediaUpload
+	/** optional location shown in the card header */
+	location?: WALocationMessage
+	/** optional title shown in the card header */
+	headerTitle?: string
+	/** optional subtitle shown in the card header */
+	headerSubtitle?: string
+	/** optional footer text shown on the card */
+	footer?: string
+	/** buttons shown on the card, at most 3 */
+	buttons: ButtonInfo[]
+}
+
+/** a carousel of cards sent with a native-flow interactive message */
+export type CarouselInfo = {
+	cards: CarouselCardInfo[]
 }
 
 export type GroupInviteInfo = {
@@ -304,6 +360,14 @@ export type AnyRegularMessageContent = (
 			image?: WAMediaUpload
 			/** optional video shown in the header above the text */
 			video?: WAMediaUpload
+			/** optional document shown in the header above the text */
+			document?: WAMediaUpload
+			/** optional location shown in the header above the text */
+			location?: WALocationMessage
+			/** optional title shown in the header */
+			headerTitle?: string
+			/** optional subtitle shown in the header */
+			headerSubtitle?: string
 			/** optional footer text shown below the buttons */
 			footer?: string
 			/** quick-reply buttons, at most 3 */
@@ -317,10 +381,27 @@ export type AnyRegularMessageContent = (
 			image?: WAMediaUpload
 			/** optional video shown in the header above the text */
 			video?: WAMediaUpload
+			/** optional document shown in the header above the text */
+			document?: WAMediaUpload
+			/** optional location shown in the header above the text */
+			location?: WALocationMessage
+			/** optional title shown in the header */
+			headerTitle?: string
+			/** optional subtitle shown in the header */
+			headerSubtitle?: string
 			/** optional footer text shown below the list button */
 			footer?: string
 			/** single-select list opened by the button */
 			list: ListInfo
+	  } & Mentionable &
+			Contextable)
+	| ({
+			/** text shown above the carousel */
+			text: string
+			/** optional footer text shown below the carousel */
+			footer?: string
+			/** carousel of cards, at most 10 */
+			carousel: CarouselInfo
 	  } & Mentionable &
 			Contextable)
 	| {
