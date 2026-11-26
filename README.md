@@ -5,21 +5,21 @@
 > [!NOTE]
 > This is a fork of [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) (based on 7.0.0-rc14) maintained by [RikPrmna](https://github.com/RikPrmna), with additional send APIs:
 >
-> | Feature | This fork | Upstream |
-> | --- | :---: | :---: |
-> | Quick-reply button messages | ✅ | ❌ |
-> | CTA buttons (URL / call / copy) | ✅ | ❌ |
-> | Send-location button | ✅ | ❌ |
-> | Address-form button | ✅* | ❌ |
-> | WhatsApp Flow button | ✅* | ❌ |
-> | Single-select list messages | ✅ | ❌ |
-> | Carousel messages | ✅ | ❌ |
-> | Image/video/document/location/text headers on buttons, lists & cards | ✅ | ❌ |
-> | Product header | ✅* | ❌ |
-> | Footer audio | ✅* | ❌ |
-> | Keep-in-chat messages (keep/unkeep) | ✅ | ❌ |
-> | Broadcast-list relay (`broadcastJidList`) | ✅ | ❌ |
-> | Audio loudness normalization (`normalizeAudio`) | ✅ | ❌ |
+> | Feature | Status |
+> | --- | :---: |
+> | Quick-reply button messages | ✅ |
+> | CTA buttons (URL / call / copy) | ✅ |
+> | Send-location button | ✅ |
+> | Address-form button | ⚠️ Limited by WhatsApp region |
+> | WhatsApp Flow button | ⚠️ Needs a real Flow ID |
+> | Single-select list messages | ✅ |
+> | Carousel messages | ✅ |
+> | Image/video/document/location/text headers on buttons, lists & cards | ✅ |
+> | Product header | ⚠️ Needs a real business catalog |
+> | Footer audio | ⚠️ Not rendered by current clients |
+> | Keep-in-chat messages (keep/unkeep) | ✅ |
+> | Broadcast-list relay (`broadcastJidList`) | ✅ |
+> | Audio loudness normalization (`normalizeAudio`) | ✅ |
 >
 > Everything else is upstream Baileys; see the sections below and the upstream guide at https://baileys.wiki.
 
