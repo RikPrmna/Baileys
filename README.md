@@ -33,7 +33,11 @@
 
 ## Install
 
-Install this fork from GitHub (the npm package `@whiskeysockets/baileys` is upstream and does not include the fork features above):
+Install this fork from npm:
+```
+yarn add @rikprmna/baileys
+```
+or from GitHub:
 ```
 yarn add github:RikPrmna/Baileys
 ```
@@ -44,7 +48,7 @@ yarn add https://github.com/RikPrmna/Baileys
 
 Then import your code using:
 ```ts
-import makeWASocket from '@whiskeysockets/baileys'
+import makeWASocket from '@rikprmna/baileys'
 ```
 
 ## Example
