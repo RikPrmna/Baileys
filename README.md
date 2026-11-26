@@ -197,9 +197,6 @@ For issues with the fork-specific features (buttons, lists, keep, broadcast rela
 
 For general Baileys questions and upstream issues, see the upstream project: [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) and the guide at https://baileys.wiki.
 
-# Sponsor
-If you'd like to financially support the upstream project, you can do so by supporting the current upstream maintainer [here](https://purpshell.dev/sponsor). Sponsorship goes to upstream, not to this fork.
-
 # Disclaimer
 This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with WhatsApp or any of its subsidiaries or its affiliates.
 The official WhatsApp website can be found at whatsapp.com. "WhatsApp" as well as related names, marks, emblems and images are registered trademarks of their respective owners.
