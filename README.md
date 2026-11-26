@@ -147,6 +147,17 @@ await sock.sendMessage(
 
 ### Headers
 - Button, list and carousel-card messages accept one optional header: `image`, `video`, `document` or `location` (provide at most one), plus optional `headerTitle` / `headerSubtitle` text
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Pick one:',
+        image: { url: './Media/header.jpg' },
+        headerTitle: 'Menu',
+        buttons: [{ id: 'h:1', displayText: 'One' }]
+    }
+)
+```
 
 ### Keep Message
 - Keeps a message in chat so it is not removed by disappearing messages
