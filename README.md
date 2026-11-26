@@ -32,6 +32,10 @@ Install this fork from GitHub (the npm package `@whiskeysockets/baileys` is upst
 ```
 yarn add github:RikPrmna/Baileys
 ```
+or with the full URL:
+```
+yarn add https://github.com/RikPrmna/Baileys
+```
 
 Then import your code using:
 ```ts
