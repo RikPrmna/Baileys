@@ -300,6 +300,10 @@ export type AnyRegularMessageContent = (
 	| ({
 			/** text shown above the buttons */
 			text: string
+			/** optional image shown in the header above the text */
+			image?: WAMediaUpload
+			/** optional video shown in the header above the text */
+			video?: WAMediaUpload
 			/** optional footer text shown below the buttons */
 			footer?: string
 			/** quick-reply buttons, at most 3 */
@@ -309,6 +313,10 @@ export type AnyRegularMessageContent = (
 	| ({
 			/** text shown above the list button */
 			text: string
+			/** optional image shown in the header above the text */
+			image?: WAMediaUpload
+			/** optional video shown in the header above the text */
+			video?: WAMediaUpload
 			/** optional footer text shown below the list button */
 			footer?: string
 			/** single-select list opened by the button */
