@@ -104,6 +104,9 @@ import makeWASocket from '@whiskeysockets/baileys'
         - [Reaction Message](#reaction-message)
         - [Pin Message](#pin-message)
         - [Poll Message](#poll-message)
+        - [Button Message](#button-message)
+        - [List Message](#list-message)
+        - [Keep Message](#keep-message)
     - [Sending with Link Preview](#sending-messages-with-link-previews)
     - [Media Messages](#media-messages)
         - [Gif Message](#gif-message)
@@ -589,6 +592,66 @@ await sock.sendMessage(
 )
 ```
 
+#### Button Message
+- Sends a native-flow interactive message with 1-3 quick-reply buttons
+- `id` is returned to the bot when the user taps the button, as `templateButtonReplyMessage.selectedId`
+- Optionally show an image or a video in the header above the text (only one of the two)
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Pick a category:',
+        footer: 'My Store', // optional
+        image: { url: './Media/header.jpg' }, // optional, or use `video` instead
+        buttons: [
+            { id: 'cat:media', displayText: 'Media' },
+            { id: 'cat:apk', displayText: 'APK' }
+        ]
+    }
+)
+```
+
+#### List Message
+- Sends a native-flow interactive message with a single-select list opened by a button
+- Requires at least 1 section with at least 1 row each
+- `id` is returned to the bot when the user picks a row, as JSON in `interactiveResponseMessage.nativeFlowResponseMessage.paramsJson`
+- Optionally show an image or a video in the header above the text (only one of the two)
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Pick a platform:',
+        footer: 'My Store', // optional
+        video: { url: './Media/header.mp4' }, // optional, or use `image` instead
+        list: {
+            title: 'Pick a platform',
+            buttonText: 'Pick a platform',
+            sections: [
+                {
+                    title: 'Social Media',
+                    rows: [
+                        { id: 'platform:tiktok', title: 'TikTok', description: '2,422 services' },
+                        { id: 'platform:instagram', title: 'Instagram' }
+                    ]
+                }
+            ]
+        }
+    }
+)
+```
+
+#### Keep Message
+- Keeps a message in chat so it is not removed by disappearing messages
+- `keepType` defaults to `KEEP_FOR_ALL`; use `UNDO_KEEP_FOR_ALL` to un-keep
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        keep: messageKey // key of the message to keep
+    }
+)
+```
+
 ### Sending Messages with Link Previews
 
 1. By default, wa does not have link generation when sent from the web
@@ -666,6 +729,7 @@ await sock.sendMessage(
     }
 )
 ```
+- Add `normalizeAudio: true` to loudness-normalize the audio before sending (uses `ffmpeg` loudnorm; falls back to the original audio if normalization fails)
 
 #### Image Message
 ```ts
@@ -1209,6 +1273,7 @@ await sock.sendMessage(
 - `statusJidList`: a list of people that you can get which you need to provide, which are the people who will get this status message.
 
 - You can send messages to broadcast lists the same way you send messages to groups & individual chats.
+- To relay a message to specific broadcast-list recipients, pass `broadcastJidList` (list of recipient JIDs) in the message options; recipients must have your number saved to receive it.
 - Right now, WA Web does not support creating broadcast lists, but you can still delete them.
 - Broadcast IDs are in the format `12345678@broadcast`
 ### Query a Broadcast List's Recipients & Name
