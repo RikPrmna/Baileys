@@ -8,8 +8,10 @@
 > | Feature | This fork | Upstream |
 > | --- | :---: | :---: |
 > | Quick-reply button messages | ✅ | ❌ |
+> | CTA buttons (URL / call / copy) | ✅ | ❌ |
 > | Single-select list messages | ✅ | ❌ |
-> | Image/video headers on buttons & lists | ✅ | ❌ |
+> | Carousel messages | ✅ | ❌ |
+> | Image/video/document/location/text headers on buttons, lists & cards | ✅ | ❌ |
 > | Keep-in-chat messages (keep/unkeep) | ✅ | ❌ |
 > | Broadcast-list relay (`broadcastJidList`) | ✅ | ❌ |
 > | Audio loudness normalization (`normalizeAudio`) | ✅ | ❌ |
@@ -98,6 +100,53 @@ await sock.sendMessage(
     }
 )
 ```
+
+### CTA Buttons
+- Buttons can also be call-to-action buttons that act on the user's phone without sending anything back to the bot; they can be mixed with quick-reply buttons in one message
+- `{ type: 'url', displayText, url, merchantUrl? }` opens a URL; `{ type: 'call', displayText, phoneNumber }` opens the dialer; `{ type: 'copy', displayText, copyCode }` copies text to the clipboard
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Your order is ready to pay:',
+        footer: 'Mahiru Store',
+        buttons: [
+            { type: 'url', displayText: 'Pay Now', url: 'https://example.com/pay' },
+            { type: 'copy', displayText: 'Copy Code', copyCode: 'ORD-123' },
+            { id: 'cek:123', displayText: 'Check Status' }
+        ]
+    }
+)
+```
+
+### Carousel Message
+- Sends a horizontally scrolling set of cards; each card has its own text, optional header, footer and buttons (at most 10 cards, at most 3 buttons per card)
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Service catalog:',
+        footer: 'Mahiru Store',
+        carousel: {
+            cards: [
+                {
+                    text: 'Service A\nRp10.000',
+                    image: { url: './Media/a.jpg' },
+                    buttons: [{ id: 'beli:a', displayText: 'Buy A' }]
+                },
+                {
+                    text: 'Service B\nRp20.000',
+                    image: { url: './Media/b.jpg' },
+                    buttons: [{ type: 'url', displayText: 'Details', url: 'https://example.com/b' }]
+                }
+            ]
+        }
+    }
+)
+```
+
+### Headers
+- Button, list and carousel-card messages accept one optional header: `image`, `video`, `document` or `location` (provide at most one), plus optional `headerTitle` / `headerSubtitle` text
 
 ### Keep Message
 - Keeps a message in chat so it is not removed by disappearing messages
