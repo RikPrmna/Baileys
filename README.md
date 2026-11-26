@@ -17,6 +17,7 @@
 > | Image/video/document/location/text headers on buttons, lists & cards | ✅ |
 > | Product header | ⚠️ Needs a real business catalog |
 > | Footer audio | ⚠️ Not rendered by current clients |
+> | Webview button | ⚠️ Not rendered on regular accounts |
 > | Keep-in-chat messages (keep/unkeep) | ✅ |
 > | Broadcast-list relay (`broadcastJidList`) | ✅ |
 > | Audio loudness normalization (`normalizeAudio`) | ✅ |

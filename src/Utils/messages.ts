@@ -520,6 +520,14 @@ const toNativeFlowButton = (button: ButtonInfo) => {
 					copy_code: button.copyCode
 				})
 			}
+		case 'webview':
+			return {
+				name: 'webview',
+				buttonParamsJson: JSON.stringify({
+					display_text: button.displayText,
+					url: button.url
+				})
+			}
 		case 'location':
 			// send_location takes no params; the client renders its own localized label
 			return {
