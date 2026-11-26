@@ -12,10 +12,15 @@ Baileys is a WebSockets-based TypeScript library for interacting with the WhatsA
 
 > [!NOTE]
 > This is a fork of [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) (based on 7.0.0-rc14) maintained by [RikPrmna](https://github.com/RikPrmna), with additional send APIs:
-> - Quick-reply **button messages** and single-select **list messages** (native-flow interactive messages), with optional image/video headers
-> - **Keep-in-chat** messages (keep/unkeep)
-> - **Broadcast-list relay** (`broadcastJidList`)
-> - Optional **audio loudness normalization** (`normalizeAudio`)
+>
+> | Feature | This fork | Upstream |
+> | --- | :---: | :---: |
+> | Quick-reply button messages | ✅ | ❌ |
+> | Single-select list messages | ✅ | ❌ |
+> | Image/video headers on buttons & lists | ✅ | ❌ |
+> | Keep-in-chat messages (keep/unkeep) | ✅ | ❌ |
+> | Broadcast-list relay (`broadcastJidList`) | ✅ | ❌ |
+> | Audio loudness normalization (`normalizeAudio`) | ✅ | ❌ |
 >
 > Everything else is upstream Baileys; see the sections below and the upstream guide at https://baileys.wiki.
 
