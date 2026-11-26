@@ -14,12 +14,14 @@ import {
 import type {
 	AnyMediaMessageContent,
 	AnyMessageContent,
+	ButtonInfo,
 	DownloadableMessage,
 	MessageContentGenerationOptions,
 	MessageGenerationOptions,
 	MessageGenerationOptionsFromContent,
 	MessageUserReceipt,
 	MessageWithContextInfo,
+	WALocationMessage,
 	WAMediaUpload,
 	WAMessage,
 	WAMessageContent,
@@ -401,25 +403,89 @@ function hasOptionalProperty<T, K extends PropertyKey>(obj: T, key: K): obj is W
 	return typeof obj === 'object' && obj !== null && key in obj && (obj as any)[key] !== null
 }
 
+type InteractiveHeaderInput = {
+	image?: WAMediaUpload
+	video?: WAMediaUpload
+	document?: WAMediaUpload
+	location?: WALocationMessage
+	headerTitle?: string
+	headerSubtitle?: string
+}
+
 const buildInteractiveHeader = async (
-	message: { image?: WAMediaUpload; video?: WAMediaUpload },
+	message: InteractiveHeaderInput,
 	options: MessageContentGenerationOptions
 ): Promise<proto.Message.InteractiveMessage.IHeader | undefined> => {
-	if (message.image && message.video) {
-		throw new Boom('provide either an image or a video header, not both', { statusCode: 400 })
+	const mediaCount = [message.image, message.video, message.document, message.location].filter(Boolean).length
+	if (mediaCount > 1) {
+		throw new Boom('provide only one of image, video, document or location header', { statusCode: 400 })
+	}
+
+	const header: proto.Message.InteractiveMessage.IHeader = {}
+	if (message.headerTitle) {
+		header.title = message.headerTitle
+	}
+
+	if (message.headerSubtitle) {
+		header.subtitle = message.headerSubtitle
 	}
 
 	if (message.image) {
 		const { imageMessage } = await prepareWAMessageMedia({ image: message.image }, options)
-		return { hasMediaAttachment: true, imageMessage }
-	}
-
-	if (message.video) {
+		header.hasMediaAttachment = true
+		header.imageMessage = imageMessage
+	} else if (message.video) {
 		const { videoMessage } = await prepareWAMessageMedia({ video: message.video }, options)
-		return { hasMediaAttachment: true, videoMessage }
+		header.hasMediaAttachment = true
+		header.videoMessage = videoMessage
+	} else if (message.document) {
+		const { documentMessage } = await prepareWAMessageMedia(
+			{ document: message.document, mimetype: 'application/octet-stream' },
+			options
+		)
+		header.hasMediaAttachment = true
+		header.documentMessage = documentMessage
+	} else if (message.location) {
+		header.hasMediaAttachment = true
+		header.locationMessage = message.location
 	}
 
-	return undefined
+	return Object.keys(header).length > 0 ? header : undefined
+}
+
+const toNativeFlowButton = (button: ButtonInfo) => {
+	switch (button.type) {
+		case 'url':
+			return {
+				name: 'cta_url',
+				buttonParamsJson: JSON.stringify({
+					display_text: button.displayText,
+					url: button.url,
+					...(button.merchantUrl ? { merchant_url: button.merchantUrl } : {})
+				})
+			}
+		case 'call':
+			return {
+				name: 'cta_call',
+				buttonParamsJson: JSON.stringify({
+					display_text: button.displayText,
+					phone_number: button.phoneNumber
+				})
+			}
+		case 'copy':
+			return {
+				name: 'cta_copy',
+				buttonParamsJson: JSON.stringify({
+					display_text: button.displayText,
+					copy_code: button.copyCode
+				})
+			}
+		default:
+			return {
+				name: 'quick_reply',
+				buttonParamsJson: JSON.stringify({ display_text: button.displayText, id: button.id })
+			}
+	}
 }
 
 export const generateWAMessageContent = async (
@@ -434,7 +500,7 @@ export const generateWAMessageContent = async (
 		}
 
 		if (buttons.length > 3) {
-			throw new Boom('WhatsApp allows at most 3 quick-reply buttons', { statusCode: 400 })
+			throw new Boom('WhatsApp allows at most 3 buttons', { statusCode: 400 })
 		}
 
 		const header = await buildInteractiveHeader(message, options)
@@ -445,10 +511,7 @@ export const generateWAMessageContent = async (
 			footer: message.footer ? { text: message.footer } : undefined,
 			nativeFlowMessage: {
 				messageVersion: 1,
-				buttons: buttons.map(button => ({
-					name: 'quick_reply',
-					buttonParamsJson: JSON.stringify({ display_text: button.displayText, id: button.id })
-				}))
+				buttons: buttons.map(toNativeFlowButton)
 			}
 		})
 	} else if (hasNonNullishProperty(message, 'list')) {
@@ -488,6 +551,48 @@ export const generateWAMessageContent = async (
 						})
 					}
 				]
+			}
+		})
+	} else if (hasNonNullishProperty(message, 'carousel')) {
+		const carousel = message.carousel
+		if (!carousel || !Array.isArray(carousel.cards) || carousel.cards.length === 0) {
+			throw new Boom('require at least 1 carousel card', { statusCode: 400 })
+		}
+
+		if (carousel.cards.length > 10) {
+			throw new Boom('WhatsApp allows at most 10 carousel cards', { statusCode: 400 })
+		}
+
+		const cards: proto.Message.IInteractiveMessage[] = []
+		for (const card of carousel.cards) {
+			if (!Array.isArray(card.buttons) || card.buttons.length === 0) {
+				throw new Boom('require at least 1 button per carousel card', { statusCode: 400 })
+			}
+
+			if (card.buttons.length > 3) {
+				throw new Boom('WhatsApp allows at most 3 buttons per carousel card', { statusCode: 400 })
+			}
+
+			cards.push(
+				WAProto.Message.InteractiveMessage.create({
+					header: await buildInteractiveHeader(card, options),
+					body: { text: card.text },
+					footer: card.footer ? { text: card.footer } : undefined,
+					nativeFlowMessage: {
+						messageVersion: 1,
+						buttons: card.buttons.map(toNativeFlowButton)
+					}
+				})
+			)
+		}
+
+		m.interactiveMessage = WAProto.Message.InteractiveMessage.create({
+			body: { text: message.text },
+			footer: message.footer ? { text: message.footer } : undefined,
+			carouselMessage: {
+				cards,
+				messageVersion: 1,
+				carouselCardType: proto.Message.InteractiveMessage.CarouselMessage.CarouselCardType.HSCROLL_CARDS
 			}
 		})
 	} else if (hasNonNullishProperty(message, 'text')) {

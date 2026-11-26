@@ -16,8 +16,10 @@ Baileys is a WebSockets-based TypeScript library for interacting with the WhatsA
 > | Feature | This fork | Upstream |
 > | --- | :---: | :---: |
 > | Quick-reply button messages | ✅ | ❌ |
+> | CTA buttons (URL / call / copy) | ✅ | ❌ |
 > | Single-select list messages | ✅ | ❌ |
-> | Image/video headers on buttons & lists | ✅ | ❌ |
+> | Carousel messages | ✅ | ❌ |
+> | Image/video/document/location/text headers on buttons, lists & cards | ✅ | ❌ |
 > | Keep-in-chat messages (keep/unkeep) | ✅ | ❌ |
 > | Broadcast-list relay (`broadcastJidList`) | ✅ | ❌ |
 > | Audio loudness normalization (`normalizeAudio`) | ✅ | ❌ |

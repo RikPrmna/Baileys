@@ -148,6 +148,196 @@ describe('generateWAMessageContent with buttons', () => {
 	})
 })
 
+describe('generateWAMessageContent with CTA buttons', () => {
+	it('builds cta_url, cta_call and cta_copy buttons mixed with quick-reply', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Pesananmu siap dibayar:',
+				buttons: [
+					{ type: 'url', displayText: 'Bayar Sekarang', url: 'https://example.com/pay' },
+					{ type: 'copy', displayText: 'Salin Kode', copyCode: 'ORD-123' },
+					{ id: 'cek:123', displayText: 'Cek Status' }
+				]
+			},
+			baseOptions
+		)
+
+		const flowButtons = content.interactiveMessage?.nativeFlowMessage?.buttons
+		expect(flowButtons).toHaveLength(3)
+		expect(flowButtons?.[0]?.name).toBe('cta_url')
+		expect(JSON.parse(flowButtons?.[0]?.buttonParamsJson || '{}')).toEqual({
+			display_text: 'Bayar Sekarang',
+			url: 'https://example.com/pay'
+		})
+		expect(flowButtons?.[1]?.name).toBe('cta_copy')
+		expect(JSON.parse(flowButtons?.[1]?.buttonParamsJson || '{}')).toEqual({
+			display_text: 'Salin Kode',
+			copy_code: 'ORD-123'
+		})
+		expect(flowButtons?.[2]?.name).toBe('quick_reply')
+		expect(JSON.parse(flowButtons?.[2]?.buttonParamsJson || '{}')).toEqual({
+			display_text: 'Cek Status',
+			id: 'cek:123'
+		})
+	})
+
+	it('builds a cta_call button', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Butuh bantuan?',
+				buttons: [{ type: 'call', displayText: 'Hubungi Admin', phoneNumber: '6282130301023' }]
+			},
+			baseOptions
+		)
+
+		const flowButtons = content.interactiveMessage?.nativeFlowMessage?.buttons
+		expect(flowButtons?.[0]?.name).toBe('cta_call')
+		expect(JSON.parse(flowButtons?.[0]?.buttonParamsJson || '{}')).toEqual({
+			display_text: 'Hubungi Admin',
+			phone_number: '6282130301023'
+		})
+	})
+})
+
+describe('generateWAMessageContent with extended headers', () => {
+	const uploadOptions: MessageContentGenerationOptions = {
+		upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+	}
+
+	it('uploads an optional header document for a buttons message', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Lihat dokumen ini:',
+				document: Buffer.from('fake-pdf-bytes'),
+				buttons: [{ id: 'doc:ok', displayText: 'OK' }]
+			},
+			uploadOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.documentMessage?.url).toBe('https://example.com/media')
+	})
+
+	it('sets a header location without uploading', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Kita ketemu di sini:',
+				location: { degreesLatitude: -6.2, degreesLongitude: 106.8, name: 'Jakarta' },
+				buttons: [{ id: 'loc:ok', displayText: 'OK' }]
+			},
+			baseOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.locationMessage?.name).toBe('Jakarta')
+	})
+
+	it('sets header title and subtitle', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Isi pesan',
+				headerTitle: 'Judul Header',
+				headerSubtitle: 'Subjudul Header',
+				buttons: [{ id: 't:ok', displayText: 'OK' }]
+			},
+			baseOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.title).toBe('Judul Header')
+		expect(header?.subtitle).toBe('Subjudul Header')
+		expect(header?.hasMediaAttachment).toBeFalsy()
+	})
+
+	it('rejects more than one header media', async () => {
+		await expect(
+			generateWAMessageContent(
+				{
+					text: 'Pilih:',
+					image: Buffer.from('fake-jpeg-bytes'),
+					document: Buffer.from('fake-pdf-bytes'),
+					buttons: [{ id: 'b1', displayText: 'Satu' }]
+				},
+				baseOptions
+			)
+		).rejects.toMatchObject({ output: { statusCode: 400 } })
+	})
+})
+
+describe('generateWAMessageContent with carousel', () => {
+	const uploadOptions: MessageContentGenerationOptions = {
+		upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+	}
+
+	it('builds a carouselMessage with cards', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Katalog layanan:',
+				carousel: {
+					cards: [
+						{
+							text: 'Layanan A',
+							buttons: [{ id: 'beli:a', displayText: 'Beli' }]
+						},
+						{
+							text: 'Layanan B',
+							buttons: [{ type: 'url', displayText: 'Detail', url: 'https://example.com/b' }]
+						}
+					]
+				}
+			},
+			baseOptions
+		)
+
+		const carousel = content.interactiveMessage?.carouselMessage
+		expect(content.interactiveMessage?.body?.text).toBe('Katalog layanan:')
+		expect(carousel?.cards).toHaveLength(2)
+		expect(carousel?.cards?.[0]?.body?.text).toBe('Layanan A')
+		expect(carousel?.cards?.[0]?.nativeFlowMessage?.buttons?.[0]?.name).toBe('quick_reply')
+		expect(carousel?.cards?.[1]?.body?.text).toBe('Layanan B')
+		expect(carousel?.cards?.[1]?.nativeFlowMessage?.buttons?.[0]?.name).toBe('cta_url')
+	})
+
+	it('uploads card header images', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Katalog:',
+				carousel: {
+					cards: [
+						{
+							text: 'Layanan A',
+							image: Buffer.from('fake-jpeg-bytes'),
+							buttons: [{ id: 'beli:a', displayText: 'Beli' }]
+						}
+					]
+				}
+			},
+			uploadOptions
+		)
+
+		const header = content.interactiveMessage?.carouselMessage?.cards?.[0]?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.imageMessage?.url).toBe('https://example.com/media')
+	})
+
+	it('rejects a carousel without cards', async () => {
+		await expect(
+			generateWAMessageContent({ text: 'Katalog:', carousel: { cards: [] } }, baseOptions)
+		).rejects.toMatchObject({ output: { statusCode: 400 } })
+	})
+
+	it('rejects a carousel card without buttons', async () => {
+		await expect(
+			generateWAMessageContent(
+				{ text: 'Katalog:', carousel: { cards: [{ text: 'Kosong', buttons: [] }] } },
+				baseOptions
+			)
+		).rejects.toMatchObject({ output: { statusCode: 400 } })
+	})
+})
+
 describe('generateWAMessageContent with list', () => {
 	const listMessage = {
 		text: 'Pilih medsos:',
