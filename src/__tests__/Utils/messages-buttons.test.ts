@@ -358,6 +358,23 @@ describe('generateWAMessageContent with location/address/flow buttons', () => {
 		expect(flowButtons?.[1]?.buttonParamsJson).toBe('{}')
 	})
 
+	it('builds a webview button', async () => {
+		const content = await generateWAMessageContent(
+			{
+				text: 'Buka dashboard:',
+				buttons: [{ type: 'webview', displayText: 'TerixRouter', url: 'https://terix.web.id' }]
+			},
+			baseOptions
+		)
+
+		const flowButtons = content.interactiveMessage?.nativeFlowMessage?.buttons
+		expect(flowButtons?.[0]?.name).toBe('webview')
+		expect(JSON.parse(flowButtons?.[0]?.buttonParamsJson || '{}')).toEqual({
+			display_text: 'TerixRouter',
+			url: 'https://terix.web.id'
+		})
+	})
+
 	it('builds a flow_message button with defaults', async () => {
 		const content = await generateWAMessageContent(
 			{

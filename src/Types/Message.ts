@@ -256,6 +256,14 @@ export type ButtonInfo =
 			copyCode: string
 	  }
 	| {
+			/** opens a URL in WhatsApp's in-app webview when tapped */
+			type: 'webview'
+			/** label shown on the button */
+			displayText: string
+			/** URL opened in the in-app webview */
+			url: string
+	  }
+	| {
 			/** opens the location picker; the picked location is sent back to the bot as a location message */
 			type: 'location'
 			/** label shown on the button */
