@@ -195,6 +195,8 @@ export type AnyMediaMessageContent = (
 			ptt?: boolean
 			/** optionally tell the duration of the audio */
 			seconds?: number
+			/** if set to true, loudness-normalize the audio via ffmpeg before sending */
+			normalizeAudio?: boolean
 	  }
 	| ({
 			sticker: WAMediaUpload
@@ -298,6 +300,10 @@ export type AnyRegularMessageContent = (
 	| ({
 			/** text shown above the buttons */
 			text: string
+			/** optional image shown in the header above the text */
+			image?: WAMediaUpload
+			/** optional video shown in the header above the text */
+			video?: WAMediaUpload
 			/** optional footer text shown below the buttons */
 			footer?: string
 			/** quick-reply buttons, at most 3 */
@@ -307,6 +313,10 @@ export type AnyRegularMessageContent = (
 	| ({
 			/** text shown above the list button */
 			text: string
+			/** optional image shown in the header above the text */
+			image?: WAMediaUpload
+			/** optional video shown in the header above the text */
+			video?: WAMediaUpload
 			/** optional footer text shown below the list button */
 			footer?: string
 			/** single-select list opened by the button */
@@ -349,6 +359,12 @@ export type AnyMessageContent =
 			delete: WAMessageKey
 	  }
 	| {
+			/** Keep a message in chat so it is not removed by disappearing messages */
+			keep: WAMessageKey
+			/** defaults to KEEP_FOR_ALL; use UNDO_KEEP_FOR_ALL to un-keep */
+			keepType?: proto.KeepType
+	  }
+	| {
 			disappearingMessagesInChat: boolean | number
 	  }
 	| {
@@ -374,6 +390,8 @@ export type MessageRelayOptions = MinimalRelayOptions & {
 	useUserDevicesCache?: boolean
 	/** jid list of participants for status@broadcast */
 	statusJidList?: string[]
+	/** jid list of recipients for a broadcast list (xxx@broadcast) */
+	broadcastJidList?: string[]
 }
 
 export type MiscMessageGenerationOptions = MinimalRelayOptions & {
@@ -387,6 +405,8 @@ export type MiscMessageGenerationOptions = MinimalRelayOptions & {
 	mediaUploadTimeoutMs?: number
 	/** jid list of participants for status@broadcast */
 	statusJidList?: string[]
+	/** jid list of recipients for a broadcast list (xxx@broadcast) */
+	broadcastJidList?: string[]
 	/** backgroundcolor for status */
 	backgroundColor?: string
 	/** font type for status */

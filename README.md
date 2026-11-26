@@ -2,6 +2,14 @@
 
 <div align='center'>Baileys is a WebSockets-based TypeScript library for interacting with the WhatsApp Web API.</div>
 
+> [!NOTE]
+> This is a fork of [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) (based on 7.0.0-rc14) maintained by [RikPrmna](https://github.com/RikPrmna), with additional send APIs:
+> - Quick-reply **button messages** and single-select **list messages** (native-flow interactive messages), with optional image/video headers
+> - **Keep-in-chat** messages (keep/unkeep)
+> - **Broadcast-list relay** (`broadcastJidList`)
+> - Optional **audio loudness normalization** (`normalizeAudio`)
+>
+> Everything else is upstream Baileys; see the sections below and the upstream guide at https://baileys.wiki.
 
 > [!CAUTION]
 > NOTICE OF BREAKING CHANGE.
@@ -17,12 +25,12 @@ New guide link: https://baileys.wiki
 
 # Get Support
 
-If you'd like business to enterprise-level support from Rajeh, the current maintainer of Baileys, you can book a video chat. Book a 1 hour time slot by contacting him on Discord or pre-ordering [here](https://purpshell.dev/book). The earlier you pre-order the better, as his time slots usually fill up very quickly. He offers immense value per hour and will answer all your questions before the time runs out.
+For issues with the fork-specific features (buttons, lists, keep, broadcast relay, audio normalization), please open an issue in this repository.
 
-If you are a business, we encourage you to contribute back to the high development costs of the project and to feed the maintainers who dump tens of hours a week on this. You can do so by booking meetings or sponsoring below. All support, even in bona fide / contribution hours, is welcome by businesses of all sizes. This is not condoning or endorsing businesses to use the library. See the Disclaimer below.
+For general Baileys questions and upstream issues, see the upstream project: [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) and the guide at https://baileys.wiki.
 
 # Sponsor
-If you'd like to financially support this project, you can do so by supporting the current maintainer [here](https://purpshell.dev/sponsor).
+If you'd like to financially support the upstream project, you can do so by supporting the current upstream maintainer [here](https://purpshell.dev/sponsor). Sponsorship goes to upstream, not to this fork.
 
 # Disclaimer
 This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with WhatsApp or any of its subsidiaries or its affiliates.
@@ -104,6 +112,9 @@ import makeWASocket from '@whiskeysockets/baileys'
         - [Reaction Message](#reaction-message)
         - [Pin Message](#pin-message)
         - [Poll Message](#poll-message)
+        - [Button Message](#button-message)
+        - [List Message](#list-message)
+        - [Keep Message](#keep-message)
     - [Sending with Link Preview](#sending-messages-with-link-previews)
     - [Media Messages](#media-messages)
         - [Gif Message](#gif-message)
@@ -589,6 +600,66 @@ await sock.sendMessage(
 )
 ```
 
+#### Button Message
+- Sends a native-flow interactive message with 1-3 quick-reply buttons
+- `id` is returned to the bot when the user taps the button, as `templateButtonReplyMessage.selectedId`
+- Optionally show an image or a video in the header above the text (only one of the two)
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Pick a category:',
+        footer: 'My Store', // optional
+        image: { url: './Media/header.jpg' }, // optional, or use `video` instead
+        buttons: [
+            { id: 'cat:media', displayText: 'Media' },
+            { id: 'cat:apk', displayText: 'APK' }
+        ]
+    }
+)
+```
+
+#### List Message
+- Sends a native-flow interactive message with a single-select list opened by a button
+- Requires at least 1 section with at least 1 row each
+- `id` is returned to the bot when the user picks a row, as JSON in `interactiveResponseMessage.nativeFlowResponseMessage.paramsJson`
+- Optionally show an image or a video in the header above the text (only one of the two)
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        text: 'Pick a platform:',
+        footer: 'My Store', // optional
+        video: { url: './Media/header.mp4' }, // optional, or use `image` instead
+        list: {
+            title: 'Pick a platform',
+            buttonText: 'Pick a platform',
+            sections: [
+                {
+                    title: 'Social Media',
+                    rows: [
+                        { id: 'platform:tiktok', title: 'TikTok', description: '2,422 services' },
+                        { id: 'platform:instagram', title: 'Instagram' }
+                    ]
+                }
+            ]
+        }
+    }
+)
+```
+
+#### Keep Message
+- Keeps a message in chat so it is not removed by disappearing messages
+- `keepType` defaults to `KEEP_FOR_ALL`; use `UNDO_KEEP_FOR_ALL` to un-keep
+```ts
+await sock.sendMessage(
+    jid,
+    {
+        keep: messageKey // key of the message to keep
+    }
+)
+```
+
 ### Sending Messages with Link Previews
 
 1. By default, wa does not have link generation when sent from the web
@@ -666,6 +737,7 @@ await sock.sendMessage(
     }
 )
 ```
+- Add `normalizeAudio: true` to loudness-normalize the audio before sending (uses `ffmpeg` loudnorm; falls back to the original audio if normalization fails)
 
 #### Image Message
 ```ts
@@ -1209,6 +1281,7 @@ await sock.sendMessage(
 - `statusJidList`: a list of people that you can get which you need to provide, which are the people who will get this status message.
 
 - You can send messages to broadcast lists the same way you send messages to groups & individual chats.
+- To relay a message to specific broadcast-list recipients, pass `broadcastJidList` (list of recipient JIDs) in the message options; recipients must have your number saved to receive it.
 - Right now, WA Web does not support creating broadcast lists, but you can still delete them.
 - Broadcast IDs are in the format `12345678@broadcast`
 ### Query a Broadcast List's Recipients & Name

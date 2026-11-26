@@ -38,7 +38,8 @@ import {
 	getAudioDuration,
 	getAudioWaveform,
 	getRawMediaUploadData,
-	type MediaDownloadOptions
+	type MediaDownloadOptions,
+	normalizeAudioMedia
 } from './messages-media'
 import { shouldIncludeReportingToken } from './reporting-utils'
 
@@ -55,6 +56,7 @@ type MediaUploadData = {
 	ptt?: boolean
 	ptv?: boolean
 	seconds?: number
+	normalizeAudio?: boolean
 	gifPlayback?: boolean
 	fileName?: string
 	jpegThumbnail?: string
@@ -219,6 +221,13 @@ export const prepareWAMessageMedia = async (
 
 		return obj
 	}
+
+	if (mediaType === 'audio' && uploadData.normalizeAudio) {
+		uploadData.media = await normalizeAudioMedia(uploadData.media, logger)
+		logger?.debug('normalized audio')
+	}
+
+	delete uploadData.normalizeAudio
 
 	const requiresDurationComputation = mediaType === 'audio' && typeof uploadData.seconds === 'undefined'
 	const requiresThumbnailComputation =
@@ -392,6 +401,27 @@ function hasOptionalProperty<T, K extends PropertyKey>(obj: T, key: K): obj is W
 	return typeof obj === 'object' && obj !== null && key in obj && (obj as any)[key] !== null
 }
 
+const buildInteractiveHeader = async (
+	message: { image?: WAMediaUpload; video?: WAMediaUpload },
+	options: MessageContentGenerationOptions
+): Promise<proto.Message.InteractiveMessage.IHeader | undefined> => {
+	if (message.image && message.video) {
+		throw new Boom('provide either an image or a video header, not both', { statusCode: 400 })
+	}
+
+	if (message.image) {
+		const { imageMessage } = await prepareWAMessageMedia({ image: message.image }, options)
+		return { hasMediaAttachment: true, imageMessage }
+	}
+
+	if (message.video) {
+		const { videoMessage } = await prepareWAMessageMedia({ video: message.video }, options)
+		return { hasMediaAttachment: true, videoMessage }
+	}
+
+	return undefined
+}
+
 export const generateWAMessageContent = async (
 	message: AnyMessageContent,
 	options: MessageContentGenerationOptions
@@ -407,7 +437,10 @@ export const generateWAMessageContent = async (
 			throw new Boom('WhatsApp allows at most 3 quick-reply buttons', { statusCode: 400 })
 		}
 
+		const header = await buildInteractiveHeader(message, options)
+
 		m.interactiveMessage = WAProto.Message.InteractiveMessage.create({
+			header,
 			body: { text: message.text },
 			footer: message.footer ? { text: message.footer } : undefined,
 			nativeFlowMessage: {
@@ -430,7 +463,10 @@ export const generateWAMessageContent = async (
 			}
 		}
 
+		const header = await buildInteractiveHeader(message, options)
+
 		m.interactiveMessage = WAProto.Message.InteractiveMessage.create({
+			header,
 			body: { text: message.text },
 			footer: message.footer ? { text: message.footer } : undefined,
 			nativeFlowMessage: {
@@ -513,6 +549,16 @@ export const generateWAMessageContent = async (
 		m.protocolMessage = {
 			key: message.delete,
 			type: WAProto.Message.ProtocolMessage.Type.REVOKE
+		}
+	} else if (hasNonNullishProperty(message, 'keep')) {
+		if (!message.keep?.id) {
+			throw new Boom('keep requires a message key with an id', { statusCode: 400 })
+		}
+
+		m.keepInChatMessage = {
+			key: message.keep,
+			keepType: message.keepType ?? proto.KeepType.KEEP_FOR_ALL,
+			timestampMs: Date.now()
 		}
 	} else if (hasNonNullishProperty(message, 'forward')) {
 		m = generateForwardMessageContent(message.forward, message.force)

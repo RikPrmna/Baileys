@@ -83,6 +83,69 @@ describe('generateWAMessageContent with buttons', () => {
 		expect(content.extendedTextMessage?.text).toBe('halo')
 		expect(content.interactiveMessage).toBeNull()
 	})
+
+	it('uploads an optional header image for a buttons message', async () => {
+		const uploadOptions: MessageContentGenerationOptions = {
+			upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+		}
+		// 1x1 JPEG
+		const image = Buffer.from(
+			'/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAAQABADAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AvwEf/9k=',
+			'base64'
+		)
+
+		const content = await generateWAMessageContent(
+			{
+				text: 'Lihat gambar ini:',
+				image,
+				buttons: [{ id: 'img:ok', displayText: 'OK' }]
+			},
+			uploadOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.imageMessage?.url).toBe('https://example.com/media')
+		expect(header?.imageMessage?.directPath).toBe('/v/test')
+		expect(content.interactiveMessage?.body?.text).toBe('Lihat gambar ini:')
+		expect(content.interactiveMessage?.nativeFlowMessage?.buttons).toHaveLength(1)
+	})
+
+	it('uploads an optional header video for a buttons message', async () => {
+		const uploadOptions: MessageContentGenerationOptions = {
+			upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+		}
+
+		const content = await generateWAMessageContent(
+			{
+				text: 'Lihat video ini:',
+				video: Buffer.from('fake-mp4-bytes'),
+				buttons: [{ id: 'vid:ok', displayText: 'OK' }]
+			},
+			uploadOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.videoMessage?.url).toBe('https://example.com/media')
+		expect(header?.videoMessage?.directPath).toBe('/v/test')
+		expect(content.interactiveMessage?.body?.text).toBe('Lihat video ini:')
+		expect(content.interactiveMessage?.nativeFlowMessage?.buttons).toHaveLength(1)
+	})
+
+	it('rejects a buttons message with both image and video headers', async () => {
+		await expect(
+			generateWAMessageContent(
+				{
+					text: 'Pilih:',
+					image: Buffer.from('fake-jpeg-bytes'),
+					video: Buffer.from('fake-mp4-bytes'),
+					buttons: [{ id: 'b1', displayText: 'Satu' }]
+				},
+				baseOptions
+			)
+		).rejects.toMatchObject({ output: { statusCode: 400 } })
+	})
 })
 
 describe('generateWAMessageContent with list', () => {
@@ -146,6 +209,57 @@ describe('generateWAMessageContent with list', () => {
 				{
 					text: 'Pilih:',
 					list: { title: 'Pilih', buttonText: 'Pilih', sections: [{ title: 'Kosong', rows: [] }] }
+				},
+				baseOptions
+			)
+		).rejects.toMatchObject({ output: { statusCode: 400 } })
+	})
+
+	it('uploads an optional header image for a list message', async () => {
+		const uploadOptions: MessageContentGenerationOptions = {
+			upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+		}
+		// 1x1 JPEG
+		const image = Buffer.from(
+			'/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAAQABADAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AvwEf/9k=',
+			'base64'
+		)
+
+		const content = await generateWAMessageContent({ ...listMessage, image }, uploadOptions)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.imageMessage?.url).toBe('https://example.com/media')
+		expect(header?.imageMessage?.directPath).toBe('/v/test')
+		expect(content.interactiveMessage?.body?.text).toBe('Pilih medsos:')
+		expect(content.interactiveMessage?.nativeFlowMessage?.buttons?.[0]?.name).toBe('single_select')
+	})
+
+	it('uploads an optional header video for a list message', async () => {
+		const uploadOptions: MessageContentGenerationOptions = {
+			upload: async () => ({ mediaUrl: 'https://example.com/media', directPath: '/v/test' })
+		}
+
+		const content = await generateWAMessageContent(
+			{ ...listMessage, video: Buffer.from('fake-mp4-bytes') },
+			uploadOptions
+		)
+
+		const header = content.interactiveMessage?.header
+		expect(header?.hasMediaAttachment).toBe(true)
+		expect(header?.videoMessage?.url).toBe('https://example.com/media')
+		expect(header?.videoMessage?.directPath).toBe('/v/test')
+		expect(content.interactiveMessage?.body?.text).toBe('Pilih medsos:')
+		expect(content.interactiveMessage?.nativeFlowMessage?.buttons?.[0]?.name).toBe('single_select')
+	})
+
+	it('rejects a list message with both image and video headers', async () => {
+		await expect(
+			generateWAMessageContent(
+				{
+					...listMessage,
+					image: Buffer.from('fake-jpeg-bytes'),
+					video: Buffer.from('fake-mp4-bytes')
 				},
 				baseOptions
 			)
