@@ -56,7 +56,7 @@ For general Baileys usage (connecting, events, sending messages, groups, and mor
 ### Button Message
 - Sends a native-flow interactive message with 1-3 quick-reply buttons
 - `id` is returned to the bot when the user taps the button, as `templateButtonReplyMessage.selectedId`
-- Optionally show an image or a video in the header above the text (only one of the two)
+- Optionally show an image, video, document or location in the header above the text (only one of them; see [Headers](#headers)), plus optional `headerTitle` / `headerSubtitle` text
 ```ts
 await sock.sendMessage(
     jid,
@@ -76,7 +76,7 @@ await sock.sendMessage(
 - Sends a native-flow interactive message with a single-select list opened by a button
 - Requires at least 1 section with at least 1 row each
 - `id` is returned to the bot when the user picks a row, as JSON in `interactiveResponseMessage.nativeFlowResponseMessage.paramsJson`
-- Optionally show an image or a video in the header above the text (only one of the two)
+- Optionally show an image, video, document or location in the header above the text (only one of them; see [Headers](#headers)), plus optional `headerTitle` / `headerSubtitle` text
 ```ts
 await sock.sendMessage(
     jid,
