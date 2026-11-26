@@ -1239,6 +1239,19 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			return undefined
 		}
 
+		// most flows render with name 'mixed', but single-purpose flows
+		// (send_location, address_message, flow_message) are only rendered
+		// when the addon names the flow itself
+		let flowName = 'mixed'
+		const flowButtons = interactive.nativeFlowMessage?.buttons ?? []
+		const buttonNames = [...new Set(flowButtons.map(button => button.name).filter(Boolean))]
+		if (
+			buttonNames.length === 1 &&
+			['send_location', 'address_message', 'flow_message'].includes(buttonNames[0] as string)
+		) {
+			flowName = buttonNames[0] as string
+		}
+
 		return {
 			tag: 'biz',
 			attrs: {},
@@ -1249,7 +1262,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					content: [
 						{
 							tag: 'native_flow',
-							attrs: { v: '9', name: 'mixed' }
+							attrs: { v: '9', name: flowName }
 						}
 					]
 				}

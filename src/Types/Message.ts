@@ -255,6 +255,30 @@ export type ButtonInfo =
 			/** text copied to the clipboard when the button is tapped */
 			copyCode: string
 	  }
+	| {
+			/** opens the location picker; the picked location is sent back to the bot as a location message */
+			type: 'location'
+			/** label shown on the button */
+			displayText: string
+	  }
+	| {
+			/** opens the WhatsApp address form; the filled address is sent back to the bot */
+			type: 'address'
+			/** label shown on the button */
+			displayText: string
+	  }
+	| {
+			/** opens a WhatsApp Flow (interactive form) identified by its Flow ID */
+			type: 'flow'
+			/** label shown on the button (the Flow call-to-action) */
+			displayText: string
+			/** Flow ID from Meta Business */
+			flowId: string
+			/** optional Flow token, defaults to 'unused' */
+			flowToken?: string
+			/** optional first Flow screen, defaults to 'WELCOME' */
+			screen?: string
+	  }
 
 /** a row in a single-select list section */
 export type ListSectionRow = {
@@ -282,6 +306,28 @@ export type ListInfo = {
 	sections: ListSection[]
 }
 
+/** a product snapshot shown in an interactive message header */
+export type ProductHeaderInfo = {
+	/** catalog product id */
+	productId: string
+	/** product title */
+	title?: string
+	/** product description */
+	description?: string
+	/** ISO currency code, e.g. 'IDR' */
+	currencyCode?: string
+	/** price multiplied by 1000, e.g. Rp10.000 = 10000000 */
+	priceAmount1000?: number
+	/** retailer/product SKU id */
+	retailerId?: string
+	/** product URL */
+	url?: string
+	/** product image, uploaded like other header media */
+	productImage?: WAMediaUpload
+	/** JID of the business that owns the catalog */
+	businessOwnerJid?: string
+}
+
 /** a card in a carousel sent with a native-flow interactive message */
 export type CarouselCardInfo = {
 	/** text shown on the card */
@@ -294,12 +340,16 @@ export type CarouselCardInfo = {
 	document?: WAMediaUpload
 	/** optional location shown in the card header */
 	location?: WALocationMessage
+	/** optional product snapshot shown in the card header */
+	product?: ProductHeaderInfo
 	/** optional title shown in the card header */
 	headerTitle?: string
 	/** optional subtitle shown in the card header */
 	headerSubtitle?: string
 	/** optional footer text shown on the card */
 	footer?: string
+	/** optional audio attached to the card footer */
+	footerAudio?: WAMediaUpload
 	/** buttons shown on the card, at most 3 */
 	buttons: ButtonInfo[]
 }
@@ -364,12 +414,16 @@ export type AnyRegularMessageContent = (
 			document?: WAMediaUpload
 			/** optional location shown in the header above the text */
 			location?: WALocationMessage
+			/** optional product snapshot shown in the header above the text */
+			product?: ProductHeaderInfo
 			/** optional title shown in the header */
 			headerTitle?: string
 			/** optional subtitle shown in the header */
 			headerSubtitle?: string
 			/** optional footer text shown below the buttons */
 			footer?: string
+			/** optional audio attached to the footer */
+			footerAudio?: WAMediaUpload
 			/** quick-reply buttons, at most 3 */
 			buttons: ButtonInfo[]
 	  } & Mentionable &
@@ -385,12 +439,16 @@ export type AnyRegularMessageContent = (
 			document?: WAMediaUpload
 			/** optional location shown in the header above the text */
 			location?: WALocationMessage
+			/** optional product snapshot shown in the header above the text */
+			product?: ProductHeaderInfo
 			/** optional title shown in the header */
 			headerTitle?: string
 			/** optional subtitle shown in the header */
 			headerSubtitle?: string
 			/** optional footer text shown below the list button */
 			footer?: string
+			/** optional audio attached to the footer */
+			footerAudio?: WAMediaUpload
 			/** single-select list opened by the button */
 			list: ListInfo
 	  } & Mentionable &
@@ -400,6 +458,8 @@ export type AnyRegularMessageContent = (
 			text: string
 			/** optional footer text shown below the carousel */
 			footer?: string
+			/** optional audio attached to the footer */
+			footerAudio?: WAMediaUpload
 			/** carousel of cards, at most 10 */
 			carousel: CarouselInfo
 	  } & Mentionable &
