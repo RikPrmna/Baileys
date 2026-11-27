@@ -3,7 +3,7 @@
 <div align='center'>Baileys is a WebSockets-based TypeScript library for interacting with the WhatsApp Web API.</div>
 
 > [!NOTE]
-> This is a fork of [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) (based on 7.0.0-rc14) maintained by [RikPrmna](https://github.com/RikPrmna), with additional send APIs:
+> Based on [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys) 7.0.0-rc14, maintained by [RikPrmna](https://github.com/RikPrmna), with additional send APIs:
 >
 > | Feature | Status |
 > | --- | :---: |
@@ -23,14 +23,6 @@
 > | Audio loudness normalization (`normalizeAudio`) | ✅ |
 >
 > Everything else is upstream Baileys; see the sections below and the upstream guide at https://baileys.wiki.
-
-> [!CAUTION]
-> NOTICE OF BREAKING CHANGE.
->
-> As of 7.0.0, multiple breaking changes were introduced into the library.
->
-> Please check out https://whiskey.so/migrate-latest for more information.
-
 
 ## Install
 
