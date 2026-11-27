@@ -61,7 +61,7 @@ To run the example script, download or clone the repo and then type the followin
 
 For general Baileys usage (connecting, events, sending messages, groups, and more), see the upstream guide at https://baileys.wiki and join the WhiskeySockets Discord [here](https://discord.gg/WeJM5FP9GG).
 
-## Fork Features
+## Additional Features
 
 ### Button Message
 - Sends a native-flow interactive message with 1-3 quick-reply buttons
