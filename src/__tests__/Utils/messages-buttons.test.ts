@@ -12,7 +12,7 @@ describe('generateWAMessageContent with buttons', () => {
 		const content = await generateWAMessageContent(
 			{
 				text: 'Pilih kategori:',
-				footer: 'Mahiru Store',
+				footer: 'My Bot',
 				buttons: [
 					{ id: 'store:layanan:media', displayText: 'Media' },
 					{ id: 'store:layanan:apk', displayText: 'APK' }
@@ -24,7 +24,7 @@ describe('generateWAMessageContent with buttons', () => {
 		const interactive = content.interactiveMessage
 		expect(interactive).toBeDefined()
 		expect(interactive?.body?.text).toBe('Pilih kategori:')
-		expect(interactive?.footer?.text).toBe('Mahiru Store')
+		expect(interactive?.footer?.text).toBe('My Bot')
 
 		const flow = interactive?.nativeFlowMessage
 		expect(flow?.messageVersion).toBe(1)
@@ -443,7 +443,7 @@ describe('generateWAMessageContent with product header and footer audio', () => 
 		const content = await generateWAMessageContent(
 			{
 				text: 'Dengarkan:',
-				footer: 'Mahiru Beta',
+				footer: 'My Bot',
 				footerAudio: Buffer.from('fake-audio-bytes'),
 				buttons: [{ id: 'f:1', displayText: 'OK' }]
 			},
@@ -451,7 +451,7 @@ describe('generateWAMessageContent with product header and footer audio', () => 
 		)
 
 		const footer = content.interactiveMessage?.footer
-		expect(footer?.text).toBe('Mahiru Beta')
+		expect(footer?.text).toBe('My Bot')
 		expect(footer?.hasMediaAttachment).toBe(true)
 		expect(footer?.audioMessage?.url).toBe('https://example.com/media')
 	})
@@ -460,7 +460,7 @@ describe('generateWAMessageContent with product header and footer audio', () => 
 describe('generateWAMessageContent with list', () => {
 	const listMessage = {
 		text: 'Pilih medsos:',
-		footer: 'Mahiru Store',
+		footer: 'My Bot',
 		list: {
 			title: 'Pilih medsos',
 			buttonText: 'Pilih medsos',
@@ -482,7 +482,7 @@ describe('generateWAMessageContent with list', () => {
 		const interactive = content.interactiveMessage
 		expect(interactive).toBeDefined()
 		expect(interactive?.body?.text).toBe('Pilih medsos:')
-		expect(interactive?.footer?.text).toBe('Mahiru Store')
+		expect(interactive?.footer?.text).toBe('My Bot')
 
 		const flow = interactive?.nativeFlowMessage
 		expect(flow?.messageVersion).toBe(1)

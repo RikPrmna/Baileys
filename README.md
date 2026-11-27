@@ -72,7 +72,7 @@ await sock.sendMessage(
     jid,
     {
         text: 'Pick a category:',
-        footer: 'My Store', // optional
+        footer: 'My Bot', // optional
         image: { url: './Media/header.jpg' }, // optional, or use `video` instead
         buttons: [
             { id: 'cat:media', displayText: 'Media' },
@@ -92,7 +92,7 @@ await sock.sendMessage(
     jid,
     {
         text: 'Pick a platform:',
-        footer: 'My Store', // optional
+        footer: 'My Bot', // optional
         video: { url: './Media/header.mp4' }, // optional, or use `image` instead
         list: {
             title: 'Pick a platform',
@@ -119,7 +119,7 @@ await sock.sendMessage(
     jid,
     {
         text: 'Your order is ready to pay:',
-        footer: 'Mahiru Store',
+        footer: 'My Bot',
         buttons: [
             { type: 'url', displayText: 'Pay Now', url: 'https://example.com/pay' },
             { type: 'copy', displayText: 'Copy Code', copyCode: 'ORD-123' },
@@ -136,7 +136,7 @@ await sock.sendMessage(
     jid,
     {
         text: 'Service catalog:',
-        footer: 'Mahiru Store',
+        footer: 'My Bot',
         carousel: {
             cards: [
                 {
