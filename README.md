@@ -26,17 +26,21 @@
 
 ## Install
 
-Install this fork from npm:
+Install from npm:
+```
+npm i @rikprmna/baileys
+```
+or with yarn:
 ```
 yarn add @rikprmna/baileys
 ```
 or from GitHub:
 ```
-yarn add github:RikPrmna/Baileys
+npm i github:RikPrmna/Baileys
 ```
 or with the full URL:
 ```
-yarn add https://github.com/RikPrmna/Baileys
+npm i https://github.com/RikPrmna/Baileys
 ```
 
 Then import your code using:
